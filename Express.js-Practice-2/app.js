@@ -1,32 +1,11 @@
 const express = require('express');
-const path = require('path');
-const router = express.Router();
+const routes = require('./routes');
+const bodyParser = require('body-parser');
 
 // console.log(__dirname); // C:\Users\Dalila\Desktop\NodeJS\Express.js-Practice-2
 const app = express();
+app.use(bodyParser.urlencoded({ extended: true }));
 
-router.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-router.get('/form', (req, res, next) => {
-  res.sendFile(path.join(__dirname, 'form.html'));
-});
-
-router.post('/profile', (req, res, next) => {
-  res.sendFile(path.join(__dirname, 'profile.html'));
-});
-
-router.get('/profile', (req, res) => {
-  res.send('<h1>You are not logged in </h1>');
-});
-
-app.use('/', router);
+app.use('/', routes);
 // When you use app.use('/', router), it means that you're telling Express to use the router middleware for any route that starts with /.
-
-// app.use('/', (req, res, next) => {
-//   //   res.send('<h1> ovo je stranica </h1>');
-//   res.sendFile(path.join(__dirname, 'index.html'));
-// });
-
 app.listen(3000);
