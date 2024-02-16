@@ -3,7 +3,7 @@
     </head>
 
     <body>
-        <%- include('../includes/navigation.ejs') %>
+        <%=  include('../includes/navigation.ejs') %>
 
             <main>
                 <% if (prods.length > 0) { %>
@@ -25,6 +25,7 @@
                                     <p class="product__description">
                                         <%= product.description %>
                                     </p>
+                                   
                                 </div>
                                 <div class="card__actions">
                                     <a href="/admin/edit-product" class="btn">Edit</a>

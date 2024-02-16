@@ -1,1 +1,22 @@
-[{"title":"A Book","imageUrl":"https://www.publicdomainpictures.net/pictures/10000/velka/1-1210009435EGmE.jpg","description":"This is an awesome book!","price":"19","id":"245343"},{"title":"Novi Proizvod","imageUrl":"","description":"proizvod!","price":"23","id":"345653"},{"title":"Another Prod","imageUrl":"","description":"Product!!\r\n","price":"12"}]
+[
+  {
+    "title": "A Book",
+    "imageUrl": "https://www.publicdomainpictures.net/pictures/10000/velka/1-1210009435EGmE.jpg",
+    "description": "This is an awesome book!",
+    "price": "19",
+    "id": "245343"
+  },
+  {
+    "title": "Novi Proizvod",
+    "imageUrl": "",
+    "description": "proizvod!",
+    "price": "23",
+    "id": "345653"
+  },
+  {
+    "title": "Another Prod",
+    "imageUrl": "",
+    "description": "Product!!\r\n",
+    "price": "12"
+  }
+]
