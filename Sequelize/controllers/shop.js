@@ -48,16 +48,17 @@ exports.getCart = (req, res, next) => {
   req.user
     .getCart()
     .then((cart) => {
-      return cart
-        .getNewProducts()
-        .then((products) => {
-          res.render('shop/cart', {
-            path: '/cart',
-            pageTitle: 'Your Cart',
-            products: products,
-          });
-        })
-        .catch((err) => console.log(err));
+      return cart.getNewProducts();
+    })
+    .then((products) => {
+      res.render('shop/cart', {
+        pageTitle: 'Your Cart',
+        path: '/cart',
+        products: products.map((product) => ({
+          productData: product, // Assuming product data is directly accessible from the product object
+          qty: product.cartItem.quantity,
+        })),
+      });
     })
     .catch((err) => console.log(err));
 };
@@ -70,7 +71,7 @@ module.exports.postCart = (req, res, next) => {
     .getCart()
     .then((cart) => {
       fetchedCart = cart;
-      return cart.getProducts({
+      return cart.getNewProducts({
         where: { id: productId },
       });
     })
@@ -79,13 +80,11 @@ module.exports.postCart = (req, res, next) => {
       if (product) {
         const oldQuantity = product.cartItem.quantity;
         newQuantity = oldQuantity + 1;
-        return product;
-      } else {
-        return Product.findByPk(productId);
       }
+      return product || Product.findByPk(productId);
     })
     .then((product) => {
-      return fetchedCart.addProduct(product, {
+      return fetchedCart.addNewProducts(product, {
         through: {
           quantity: newQuantity,
         },
@@ -102,7 +101,7 @@ exports.postCartDeleteProduct = (req, res, next) => {
   req.user
     .getCart()
     .then((cart) => {
-      return cart.getProducts({ where: { id: prodId } });
+      return cart.getNewProducts({ where: { id: prodId } });
     })
     .then((products) => {
       const product = products[0];
@@ -113,7 +112,7 @@ exports.postCartDeleteProduct = (req, res, next) => {
     })
     .catch((err) => console.log(err));
 
-  Product.findById(prodId, (product) => {
+  Product.findByPk(prodId, (product) => {
     Cart.deleteProduct(prodId, product.price);
   });
 };
