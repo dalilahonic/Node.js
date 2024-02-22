@@ -5,13 +5,12 @@ const MongoClient = mongodb.MongoClient;
 
 dotenv.config();
 
+const password = process.env.MONGODB_PASSWORD;
 let _db;
 
 const mongoConnect = (callback) => {
-  const password = process.env.MONGODB_PASSWORD;
-
   MongoClient.connect(
-    `mongodb+srv://dalilahonic1:${password}@cluster0.geaafkb.mongodb.net/shop?retryWrites=true&w=majority`
+    `mongodb+srv://dalilahonic1:${password}@cluster0.x7ak3eh.mongodb.net/?retryWrites=true&w=majority`
   )
     .then((client) => {
       console.log('Connected!');
