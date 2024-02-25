@@ -19,6 +19,8 @@ exports.postAddProduct = (req, res, next) => {
     price,
     description,
     imageUrl,
+    userId: req.user,
+    // you can store entire User object and mongoose will just pick the ID from that object
   });
   // This product will be saved in the 'shop2' database because that is what we specified in the MongoDB URL, under the 'products' collection bacause that is how we named our model.
 
@@ -80,6 +82,8 @@ exports.postEditProduct = (req, res, next) => {
 
 exports.getProducts = (req, res, next) => {
   Product.find()
+    // .select('title price -_id')
+    // .populate('userId', 'name')
     .then((products) => {
       res.render('admin/products', {
         prods: products,
