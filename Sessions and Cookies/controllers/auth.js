@@ -25,7 +25,7 @@ module.exports.postLogin = (req, res, next) => {
         res.redirect('/');
       });
     })
-    .catch((err) => console.log(err));
+    .catch((error) => console.log(error));
 };
 
 exports.postLogout = (req, res) => {
