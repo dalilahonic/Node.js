@@ -1,5 +1,4 @@
 const path = require('path');
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
@@ -7,28 +6,33 @@ const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(
   session
 );
-
+const csrf = require('csurf');
+const flash = require('connect-flash');
 const errorController = require('./controllers/error');
 const User = require('./models/user');
+const adminRoutes = require('./routes/admin');
+const shopRoutes = require('./routes/shop');
+const authRoutes = require('./routes/auth');
 
 require('dotenv').config();
 const mongodbUrl = process.env.URL;
 
 const app = express();
+
+const csrfProtection = csrf();
+
+app.set('view engine', 'ejs');
+app.set('views', 'views');
+
 const store = new MongoDBStore({
   uri: mongodbUrl,
   collection: 'sessions',
 });
 
-app.set('view engine', 'ejs');
-app.set('views', 'views');
-
-const adminRoutes = require('./routes/admin');
-const shopRoutes = require('./routes/shop');
-const authRoutes = require('./routes/auth');
-
 app.use(bodyParser.urlencoded({ extended: false }));
+
 app.use(express.static(path.join(__dirname, 'public')));
+
 app.use(
   session({
     secret: 'my secret',
@@ -37,6 +41,9 @@ app.use(
     store: store,
   })
 );
+
+app.use(csrfProtection);
+app.use(flash());
 
 app.use((req, res, next) => {
   if (!req.session.user) {
@@ -48,6 +55,12 @@ app.use((req, res, next) => {
       next();
     })
     .catch((err) => console.log(err));
+});
+
+app.use((req, res, next) => {
+  res.locals.isAuthenticated = req.session.isLoggedIn;
+  res.locals.csrfToken = req.csrfToken();
+  next();
 });
 
 app.use('/admin', adminRoutes);
