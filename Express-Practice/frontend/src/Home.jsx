@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 
 export default function Home() {
   const [data, setData] = useState({});
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetch('http://localhost:9000')
@@ -11,9 +14,9 @@ export default function Home() {
       .then((data) => {
         console.log(data);
         setData(data);
-      });
+      })
+      .catch((err) => console.log(err));
   }, []);
-
   function handleSubmit(e) {
     e.preventDefault();
     fetch('http://localhost:9000/form', {
@@ -24,7 +27,10 @@ export default function Home() {
       body: JSON.stringify({ firstName, lastName }),
     })
       .then((res) => res.json())
-      .then((data) => console.log(data))
+      .then((data) => {
+        setData(data);
+        navigate('/user/:id');
+      })
       .catch((err) => console.log(err));
   }
 
