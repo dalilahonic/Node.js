@@ -1,0 +1,19 @@
+input {
+  margin-block: 10px;
+  height: 32px;
+  padding-inline: 10px;
+  font-size: 16px;
+}
+
+label {
+  margin-inline: 10px;
+  font-size: 18px;
+}
+
+* {
+  font-family: sans-serif;
+}
+
+div.wrapper {
+  padding: 20px;
+}
