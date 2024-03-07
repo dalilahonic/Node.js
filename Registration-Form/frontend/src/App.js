@@ -6,12 +6,16 @@ import {
 import Home from './components/Home';
 import Singup from './components/Signup';
 import Login from './components/Login';
+import User from './components/User';
+import ResetPassword from './components/ResetPassword';
 
 function App() {
   const router = createBrowserRouter([
     { path: '/', element: <Home /> },
     { path: '/signup', element: <Singup /> },
     { path: '/login', element: <Login /> },
+    { path: '/:username', element: <User /> },
+    { path: '/reset-password', element: <ResetPassword /> },
   ]);
 
   return <RouterProvider router={router}></RouterProvider>;

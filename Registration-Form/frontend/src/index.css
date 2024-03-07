@@ -1,5 +1,7 @@
 input {
   margin-block: 10px;
+  display: block;
+  margin-inline: 10px;
   height: 32px;
   padding-inline: 10px;
   font-size: 16px;

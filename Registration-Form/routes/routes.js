@@ -1,17 +1,19 @@
 import express from 'express';
-
-const router = express.Router();
-
 import {
+  getUserInformation,
+  postEditUser,
   postLogin,
   postSignup,
 } from '../controllers/auth.js';
 
-router.get('/', (req, res) => {
-  res.json({ text: 'Hello world!' });
-});
+const router = express.Router();
 
 router.post('/signup', postSignup);
 
 router.post('/login', postLogin);
+
+router.post('/update-user', postEditUser);
+
+router.get('/:username', getUserInformation);
+
 export default router;

@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 
 function Login() {
-  const [email, setEmail] = useState();
-  const [password, setPassword] = useState();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
 
   const navigate = useNavigate();
@@ -25,7 +25,7 @@ function Login() {
         console.log(data);
 
         setError(null);
-        navigate('/');
+        navigate(`/${data.username}`);
       })
       .then((err) => console.log(err));
   }
