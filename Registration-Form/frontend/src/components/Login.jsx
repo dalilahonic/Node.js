@@ -22,8 +22,6 @@ function Login() {
           return;
         }
 
-        console.log(data);
-
         setError(null);
         navigate(`/${data.username}`);
       })
