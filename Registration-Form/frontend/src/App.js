@@ -8,6 +8,7 @@ import Singup from './components/Signup';
 import Login from './components/Login';
 import User from './components/User';
 import ResetPassword from './components/ResetPassword';
+import VerifyEmail from './components/VerifyEmail';
 
 function App() {
   const router = createBrowserRouter([
@@ -16,6 +17,10 @@ function App() {
     { path: '/login', element: <Login /> },
     { path: '/:username', element: <User /> },
     { path: '/reset-password', element: <ResetPassword /> },
+    {
+      path: '/verify-email/:token',
+      element: <VerifyEmail />,
+    },
   ]);
 
   return <RouterProvider router={router}></RouterProvider>;

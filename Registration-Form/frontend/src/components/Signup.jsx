@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router';
 
 function Signup() {
-  const navigate = useNavigate();
-  const [username, setUsername] = useState();
-  const [email, setEmail] = useState();
-  const [password, setPassword] = useState();
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [message, setMessage] = useState('');
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -21,12 +20,12 @@ function Signup() {
         .json()
         .then((data) => {
           if (data.error) {
+            setMessage('');
             setError(data.error);
             return;
           }
-          console.log(data);
           setError(null);
-          navigate('/login');
+          setMessage(data.message);
         })
         .catch((err) => console.log(err))
     );
@@ -63,6 +62,7 @@ function Signup() {
           <br />
           <button type='submit'>Submit</button>
           {error && <p style={{ color: 'red' }}>{error}</p>}
+          {message && <p>{message}</p>}
         </form>
       </div>
     </>

@@ -1,27 +1,35 @@
 import User from '../models/User.js';
 import bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 export const postSignup = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
     const doesEmailExist = await User.findOne({
-      email: email,
+      email,
     });
     const doesUsernameExist = await User.findOne({
-      username: username,
+      username,
     });
 
-    if (doesEmailExist) {
-      res.json({
+    if (doesEmailExist && doesEmailExist.isVerified) {
+      return res.json({
         error: 'User with this email already exists',
       });
-    } else if (doesUsernameExist) {
-      res.json({
+    } else if (
+      doesUsernameExist &&
+      doesUsernameExist.isVerified
+    ) {
+      return res.json({
         error: 'User with this username already exists',
       });
     } else if (username.length < 5) {
-      res.json({
+      return res.json({
         error: 'Username must be longer than 5 characters',
       });
     } else if (
@@ -30,31 +38,77 @@ export const postSignup = async (req, res) => {
       email.length < 6 ||
       email.split('@')[1].length < 3
     ) {
-      res.json({
+      return res.json({
         error: 'Please enter a valid email!',
       });
     } else if (password.length < 7) {
-      res.json({
+      return res.json({
         error: 'Password must be longer than 7 characters',
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
+    const verificationToken = uuidv4();
 
-    const newUser = new User({
+    const newUser = await new User({
       username,
       email,
       password: hashedPassword,
+      verificationToken,
     });
 
-    newUser
-      .save()
-      .then((user) => console.log(user))
-      .catch((err) => console.log(err));
+    await newUser.save();
 
-    res.json({ username, email, password });
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: 'dalilahonic1@gmail.com',
+        pass: process.env.APP_PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      from: 'dalilahonic1@gmail.com',
+      to: email,
+      subject: 'Verify your email adress',
+      html: `Click <a href="http://localhost:3000/verify-email/${verificationToken}">here</a> to verify your email address.`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        res.status(500).json({
+          error:
+            'Failed to send verification email' + error,
+        });
+      } else {
+        res.status(200).json({
+          message: 'Verification email has been sent ',
+        });
+      }
+    });
   } catch (err) {
-    console.log(err);
+    res.json({ error: 'Failed to sing up' });
+  }
+};
+
+export const postVerifyEmail = async (req, res) => {
+  const { token } = req.body;
+
+  const user = await User.findOne({
+    verificationToken: token,
+  });
+
+  if (!user) {
+    return res.json({ error: 'Failed to verify email' });
+  } else {
+    if (user.verificationToken === token) {
+      user.isVerified = true;
+      user.verificationToken = undefined;
+      await user.save();
+      res.json({ message: 'Email verified successfully' });
+    }
   }
 };
 
@@ -63,6 +117,12 @@ export const postLogin = async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
+
+    if (!user.isVerified) {
+      return res.json({
+        error: 'Wrong email or password ',
+      });
+    }
 
     if (user) {
       const paswordMatch = await bcrypt.compare(
