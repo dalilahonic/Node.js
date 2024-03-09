@@ -15,7 +15,12 @@ function Login() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === 429) {
+          throw new Error('Too many requests');
+        }
+        return res.json();
+      })
       .then((data) => {
         if (data.error) {
           setError(data.error);
@@ -25,7 +30,9 @@ function Login() {
         setError(null);
         navigate(`/${data.username}`);
       })
-      .then((err) => console.log(err));
+      .catch((error) => {
+        setError(error.message);
+      });
   }
 
   return (
