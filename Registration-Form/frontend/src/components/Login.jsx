@@ -35,6 +35,22 @@ function Login() {
       });
   }
 
+  function handleForgotPassword(e) {
+    fetch('http://localhost:5000/forgot-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    })
+      .then((res) => {
+        console.log(res);
+        return res.json();
+      })
+      .then((data) => console.log(data))
+      .catch((err) => console.log(err));
+  }
+
   return (
     <>
       <div className='wrapper'>
@@ -58,6 +74,12 @@ function Login() {
           <br />
           <button type='submit'>Submit</button>
           {error && <p style={{ color: 'red' }}>{error}</p>}
+          <p
+            style={{ color: 'blue' }}
+            onClick={(e) => handleForgotPassword(e)}
+          >
+            Forgot password ?
+          </p>
         </form>
       </div>
     </>

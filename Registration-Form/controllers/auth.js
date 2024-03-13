@@ -179,3 +179,119 @@ export const postEditUser = async (req, res) => {
 
   res.json({ username: user.username, email: user.email });
 };
+
+export const postChangePassword = async (req, res) => {
+  const { username, oldPassword, newPassword } = req.body;
+
+  if (!oldPassword || !newPassword) {
+    return res.json({
+      error: 'You must enter all fields!',
+    });
+  }
+
+  try {
+    const user = await User.findOne({ username });
+
+    const passwordMatch = await bcrypt.compare(
+      oldPassword,
+      user.password
+    );
+
+    const isNewPasswordIdentical = await bcrypt.compare(
+      newPassword,
+      user.password
+    );
+
+    if (newPassword.length < 7) {
+      return res.json({
+        error: 'Password must be longer than 7 characters',
+      });
+    }
+
+    if (!passwordMatch) {
+      return res.json({ error: 'Password is not correct' });
+    }
+
+    if (isNewPasswordIdentical) {
+      return res.json({
+        error:
+          'New password must be different from the old one!',
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(
+      newPassword,
+      12
+    );
+
+    user.password = hashedPassword;
+    await user.save();
+    return res.json({
+      message: 'Password updated successfully!',
+    });
+  } catch (err) {
+    if (err) {
+      res.json({ err: 'Failed to update password' });
+    }
+  }
+};
+
+export const postResetPassword = async (req, res) => {
+  const { email } = req.body;
+
+  const verificationToken = uuidv4();
+
+  const user = await User.findOne({ email });
+
+  user.verificationToken = verificationToken;
+  await user.save();
+
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: 'dalilahonic1@gmail.com',
+      pass: process.env.APP_PASSWORD,
+    },
+  });
+
+  const mailOptions = {
+    from: 'dalilahonic1@gmail.com',
+    to: email,
+    subject: 'Reset your password',
+    html: `Click <a href="http://localhost:3000/reset-password/${verificationToken}"> here to reset your password </a>`,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      res
+        .status(500)
+        .json({ error: 'Failed to send email!' });
+    } else {
+      res.status(200).json({
+        message: 'Email has been sent',
+      });
+    }
+  });
+};
+
+export const postResetPassword2 = async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  return res.json({ token, newPassword });
+
+  // const user = await User.findOne({ token });
+
+  // if (user.verificationToken === token) {
+  //   user.password = newPassword;
+  //   user.verificationToken = undefined;
+  //   await user.save();
+  //   return res.json({
+  //     message: 'Password changed',
+  //     username: user.username,
+  //   });
+  // } else {
+  //   return res.json({ error: 'Something went wrong' });
+  // }
+};

@@ -75,8 +75,6 @@ function User() {
     return <p>Page not found!</p>;
   }
 
-  console.log(userData);
-
   return (
     <div>
       <h1>User Information</h1>
@@ -116,9 +114,11 @@ function User() {
       )}
       <button
         style={{ display: 'block', marginBlock: '10px' }}
-        onClick={() => navigate('/reset-password')}
+        onClick={() =>
+          navigate(`/${username}/change-password`)
+        }
       >
-        Reset Password
+        Change Password
       </button>
     </div>
   );
