@@ -1,8 +1,8 @@
-import User from '../models/User.js';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import User from '../models/User.js';
 
 dotenv.config();
 
@@ -260,7 +260,7 @@ export const postResetPassword = async (req, res) => {
     from: 'dalilahonic1@gmail.com',
     to: email,
     subject: 'Reset your password',
-    html: `Click <a href="http://localhost:3000/reset-password/${verificationToken}"> here to reset your password </a>`,
+    html: `Click <a href="http://localhost:3000/reset-password/${verificationToken}"> here </a>to reset your password `,
   };
 
   transporter.sendMail(mailOptions, (error, info) => {
@@ -279,19 +279,23 @@ export const postResetPassword = async (req, res) => {
 export const postResetPassword2 = async (req, res) => {
   const { token, newPassword } = req.body;
 
-  return res.json({ token, newPassword });
+  const user = await User.findOne({
+    verificationToken: token,
+  });
 
-  // const user = await User.findOne({ token });
-
-  // if (user.verificationToken === token) {
-  //   user.password = newPassword;
-  //   user.verificationToken = undefined;
-  //   await user.save();
-  //   return res.json({
-  //     message: 'Password changed',
-  //     username: user.username,
-  //   });
-  // } else {
-  //   return res.json({ error: 'Something went wrong' });
-  // }
+  if (user) {
+    const hashedPassword = await bcrypt.hash(
+      newPassword,
+      12
+    );
+    user.password = hashedPassword;
+    user.verificationToken = undefined;
+    await user.save();
+    return res.json({
+      message: 'Password changed',
+      username: user.username,
+    });
+  } else {
+    return res.json({ error: 'Something went wrong' });
+  }
 };

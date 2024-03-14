@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [message, setMessage] = useState(null);
 
   const navigate = useNavigate();
 
@@ -44,12 +45,17 @@ function Login() {
       body: JSON.stringify({ email }),
     })
       .then((res) => {
-        console.log(res);
         return res.json();
       })
-      .then((data) => console.log(data))
+      .then((data) => {
+        setMessage(data.message);
+      })
       .catch((err) => console.log(err));
   }
+
+  useEffect(() => {
+    if (message) setError(null);
+  }, [message]);
 
   return (
     <>
@@ -80,6 +86,7 @@ function Login() {
           >
             Forgot password ?
           </p>
+          {message && <p> {message}</p>}
         </form>
       </div>
     </>

@@ -16,7 +16,7 @@ const userSchema = mongoose.Schema({
     required: true,
     minlength: 7,
   },
-  verificationToken: String,
+  verificationToken: mongoose.Schema.Types.Mixed,
   isVerified: {
     type: Boolean,
     default: false,

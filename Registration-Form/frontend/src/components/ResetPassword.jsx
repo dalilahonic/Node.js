@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 
 function ResetPassword() {
   const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
   const { token } = useParams();
   const navigate = useNavigate();
 
@@ -19,18 +20,17 @@ function ResetPassword() {
       }),
     })
       .then((res) => {
-        console.log(res);
-        res.json();
+        return res.json();
       })
       .then((data) => {
-        // if (data.message) {
-        //   navigate(`/${data.username}`);
-        // } else if (data.error) {
-        //   console.log(data.error);
-        // }
-        console.log(data);
+        if (data.message) {
+          setError(null);
+          navigate(`/${data.username}`);
+        } else if (data.error) {
+          setError(data.error);
+        }
       })
-      .catch((err) => console.log(err));
+      .catch((err) => setError(err.message));
   }
   return (
     <>
@@ -42,6 +42,7 @@ function ResetPassword() {
           onChange={(e) => setPassword(e.target.value)}
         />
         <button type='submit'>Submit</button>
+        {error && <p>{error}</p>}
       </form>
     </>
   );
