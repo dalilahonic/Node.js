@@ -12,15 +12,19 @@ function App() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ isLoggedIn: true }),
-    }).then((res) =>
-      res.json().then((data) => {
+    })
+      .then((res) => {
+        console.log(res);
+        return res.json();
+      })
+      .then((data) => {
         console.log(data);
       })
-    );
+      .catch((err) => console.log(err));
   }
   return (
     <div className='App'>
-      <form onSubmit={(e) => handleSubmit(e)}>
+      <form onSubmit={(e) => handleSubmit(e)} method='POST'>
         <label>Fist Name</label>
         <input
           name='fName'
