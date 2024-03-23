@@ -8,14 +8,19 @@ router.get('/', (req, res) => {
 
 router.get('/login', (req, res) => {
   const { cookies } = req;
-
   res.json({ cookies });
 });
 
 router.post('/login', (req, res) => {
-  res.cookie('loggedIn', true);
+  const { isLoggedIn } = req.body;
+  res.cookie('loggedIn', isLoggedIn);
+  res.json({ message: 'Logged in sucessfully' });
+});
 
-  res.send({ message: 'Login successful' });
+router.post('/logout', (req, res) => {
+  const { isLoggedIn } = req.body;
+  res.cookie('loggedIn', isLoggedIn);
+  res.json({ message: 'Logged out sucessfully' });
 });
 
 export default router;
