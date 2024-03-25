@@ -10,9 +10,9 @@ import routes from './routes.js';
 dotenv.config();
 const URI = process.env.MONGODB_URI;
 
-const connectMongoDB = connectMongoDBSession(session);
+const MongoDBStore = connectMongoDBSession(session);
 
-const store = new connectMongoDB({
+const store = new MongoDBStore({
   uri: URI,
   collection: 'sessions',
 });
