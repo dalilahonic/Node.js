@@ -20,7 +20,7 @@ router.post(
     body('password', 'Password has to be valid.')
       .isLength({ min: 5 })
       .isAlphanumeric()
-      .trim()
+      .trim(),
   ],
   authController.postLogin
 );
@@ -36,13 +36,15 @@ router.post(
         //   throw new Error('This email address if forbidden.');
         // }
         // return true;
-        return User.findOne({ email: value }).then(userDoc => {
-          if (userDoc) {
-            return Promise.reject(
-              'E-Mail exists already, please pick a different one.'
-            );
+        return User.findOne({ email: value }).then(
+          (userDoc) => {
+            if (userDoc) {
+              return Promise.reject(
+                'E-Mail exists already, please pick a different one.'
+              );
+            }
           }
-        });
+        );
       })
       .normalizeEmail(),
     body(
@@ -59,7 +61,7 @@ router.post(
           throw new Error('Passwords have to match!');
         }
         return true;
-      })
+      }),
   ],
   authController.postSignup
 );
@@ -72,6 +74,9 @@ router.post('/reset', authController.postReset);
 
 router.get('/reset/:token', authController.getNewPassword);
 
-router.post('/new-password', authController.postNewPassword);
+router.post(
+  '/new-password',
+  authController.postNewPassword
+);
 
 module.exports = router;
