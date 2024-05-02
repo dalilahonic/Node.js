@@ -9,6 +9,8 @@ require('dotenv').config();
 
 const graphqlSchema = require('./grpahql/schema');
 const graphqlResolver = require('./grpahql/resolvers');
+const auth = require('./middleware/auth');
+const { clearImage } = require('./util/file');
 
 const app = express();
 
@@ -67,6 +69,28 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(auth);
+
+app.put('/post-image', (req, res, next) => {
+  if (!req.isAuth) {
+    throw new Error('Not authenticated!');
+  }
+  if (!req.file) {
+    return res
+      .status(200)
+      .json({ message: 'No file provided!' });
+  }
+
+  if (req.body.oldPath) {
+    clearImage(req.body.oldPath);
+  }
+
+  return res.status(201).json({
+    message: 'File stored.',
+    filePath: req.file.path,
+  });
+});
+
 app.use(
   '/graphql',
   graphqlHTTP({
@@ -104,3 +128,5 @@ mongoose
     app.listen(8080);
   })
   .catch((err) => console.log(err));
+
+
