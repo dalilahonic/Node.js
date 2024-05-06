@@ -1,21 +1,33 @@
 import express from 'express';
 import routes from './routes.js';
-// import bodyParser from 'body-parser';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const URI = process.env.URI;
 
 const app = express();
 
-// app.use(bodyParser);
 app.use(express.json());
 app.use(routes);
 
 app.use((error, req, res, next) => {
   console.log(error);
-  res.status(500).json({
-    error: error.message,
-    statusCode: error.statusCode,
+
+  const statusCode = error.statusCode || 500;
+  const errorMessage =
+    error.message || 'Invernal Server Error';
+
+  res.status(statusCode).json({
+    errorMessage,
+    statusCode,
+    errors: error.errors,
   });
 });
 
-app.listen(9000, () => {
-  console.log('Server is running on port 9000');
+mongoose.connect(URI).then(() => {
+  app.listen(9000, () => {
+    console.log('Server is running on port 9000');
+  });
 });
