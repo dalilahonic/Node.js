@@ -1,0 +1,9 @@
+input {
+  display: block;
+  margin-block: 10px;
+}
+
+body {
+  padding: 30px;
+  margin: 0;
+}

@@ -1,6 +1,14 @@
 import express from 'express';
 import { validationResult, body } from 'express-validator';
 import rateLimit from 'express-rate-limit';
+import crypto from 'crypto';
+import nodemailer from 'nodemailer';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+import { verifyToken } from './middleware.js';
+
+dotenv.config();
 
 import Message from './schema.js';
 import User from './User.js';
@@ -91,13 +99,16 @@ router.post(
   '/register',
   [
     body('username')
-      .isEmpty()
+      .trim()
+      .notEmpty()
       .withMessage('Username is required')
       .isLength({ min: 3 })
       .withMessage(
         'Username must be at least 3 characters long'
-      ),
+      )
+      .escape(),
     body('email')
+      .normalizeEmail()
       .notEmpty()
       .withMessage('Email is required')
       .isEmail()
@@ -147,25 +158,97 @@ router.post(
       }
       const { username, email, password } = req.body;
 
+      const existingEmail = await User.findOne({ email });
+
+      if (existingEmail) {
+        const existingEmailError = new Error(
+          'Email already exists'
+        );
+        existingEmailError.statusCode = 400;
+        throw existingEmailError;
+      }
+
+      const existingUsername = await User.findOne({
+        username,
+      });
+
+      if (existingUsername) {
+        const existingUsernameError = new Error(
+          'Username already taken'
+        );
+        existingUsernameError.statusCode = 400;
+        throw existingUsernameError;
+      }
+
       const hashedPassword = await bcrypt.hash(
         password,
         12
       );
 
+      const verificationToken = crypto
+        .randomBytes(32)
+        .toString('hex');
+
       await User.create({
         username,
         email,
         password: hashedPassword,
+        verificationToken,
       });
+
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: {
+          user: 'dalilahonic1@gmail.com',
+          pass: process.env.APP_PASSWORD,
+        },
+      });
+
+      const mailOptions = {
+        from: 'dalilahonic1@gmail.com',
+        to: email,
+        subject: 'Emial Verification',
+        html: `<p>Click <a href="http://localhost:9000/verify/${verificationToken}">here</a> to verify your email.</p>`,
+      };
+
+      await transporter.sendMail(mailOptions);
 
       res
         .status(201)
-        .json({ message: 'User registered successfully' });
+        .json({ message: 'Check email to verify account' });
     } catch (error) {
       next(error);
     }
   }
 );
+
+router.get('/verify/:token', async (req, res, next) => {
+  try {
+    const { token } = req.params;
+
+    const user = await User.findOne({
+      verificationToken: token,
+    });
+
+    if (!user) {
+      const noUserError = new Error('No user found');
+      throw noUserError;
+    }
+
+    user.isVerified = true;
+    user.verificationToken = undefined;
+
+    await user.save();
+
+    res
+      .status(200)
+      .json({ message: 'Email verified successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.post(
   '/login',
@@ -193,9 +276,13 @@ router.post(
         throw validationError;
       }
 
-      const { email, password } = req.bod;
+      const { email, password } = req.body;
 
-      const user = User.findOne({ email });
+      const user = await User.findOne({ email });
+
+      if (!user.isVerified) {
+        throw new Error('Email not verified');
+      }
 
       if (!user) {
         throw new Error('User not found');
@@ -210,9 +297,34 @@ router.post(
         throw new Error('Invalid password');
       }
 
-      req.session.userId = user._id;
+      const token = jwt.sign(
+        { userId: user._id },
+        process.env.SECRET,
+        { expiresIn: '1h' }
+      );
 
-      res.status(200).json({ message: 'Login successful' });
+      res.status(200).json({
+        message: 'Login successful',
+        token,
+        username: user.username,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/profile',
+  verifyToken,
+  async (req, res, next) => {
+    try {
+      const user = await User.findById(req.userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      res.status(200).json({ username: user.username });
     } catch (error) {
       next(error);
     }
