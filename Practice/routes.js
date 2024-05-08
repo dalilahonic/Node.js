@@ -6,7 +6,7 @@ import nodemailer from 'nodemailer';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import { verifyToken } from './middleware.js';
+import { isUser, verifyToken } from './middleware.js';
 
 dotenv.config();
 
@@ -280,12 +280,12 @@ router.post(
 
       const user = await User.findOne({ email });
 
-      if (!user.isVerified) {
-        throw new Error('Email not verified');
-      }
-
       if (!user) {
         throw new Error('User not found');
+      }
+
+      if (!user.isVerified) {
+        throw new Error('Email not verified');
       }
 
       const passwordMatch = await bcrypt.compare(
@@ -298,7 +298,10 @@ router.post(
       }
 
       const token = jwt.sign(
-        { userId: user._id },
+        {
+          userId: user._id,
+          user_type_id: req.body.user_type_id || 0,
+        },
         process.env.SECRET,
         { expiresIn: '1h' }
       );
@@ -317,6 +320,7 @@ router.post(
 router.post(
   '/profile',
   verifyToken,
+  isUser,
   async (req, res, next) => {
     try {
       const user = await User.findById(req.userId);
@@ -325,6 +329,66 @@ router.post(
       }
 
       res.status(200).json({ username: user.username });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/profile/update',
+  verifyToken,
+  isUser,
+  [
+    body('username')
+      .trim()
+      .notEmpty()
+      .withMessage('Username is required')
+      .isLength({ min: 3 })
+      .withMessage(
+        'Username must be at least 3 characters long'
+      ),
+    body('password')
+      .notEmpty()
+      .withMessage('Password is required'),
+  ],
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        const error = new Error('Validation error');
+        error.statusCode = 400;
+        error.errors = errors.array();
+      }
+
+      const { username, password } = req.body;
+      const user = await User.findById(req.userId);
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      if (username && user.username !== username) {
+        user.username = username;
+      }
+
+      const passwordMatch = bcrypt.compare(
+        password,
+        user.password
+      );
+
+      if (!passwordMatch) {
+        const hashedPw = bcrypt.hash(password, 12);
+        user.password = hashedPw;
+      } else {
+        throw new Error('You must change your password');
+      }
+
+      await user.save();
+
+      res
+        .status(200)
+        .json({ message: 'Profile updated succesfully' });
     } catch (error) {
       next(error);
     }

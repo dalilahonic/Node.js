@@ -15,12 +15,43 @@ export const verifyToken = async (req, res, next) => {
       throw error;
     }
 
-    const decoded = jwt.verify(token, process.env.SECRET);
+    const verifiedUser = jwt.verify(
+      token,
+      process.env.SECRET
+    );
 
-    const user = await User.findById(decoded.userId);
+    const user = await User.findById(verifiedUser.userId);
 
     if (user.username === username) {
-      req.userId = decoded.userId;
+      req.user = verifiedUser;
+      next();
+    } else {
+      const error = new Error('You are not logged in');
+      error.statusCode = 401;
+      throw error;
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const isUser = async (req, res, next) => {
+  try {
+    if (req.user.user_type_id === 0) {
+      next();
+    } else {
+      const error = new Error('Unauthorized');
+      error.statusCode = 401;
+      throw error;
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const isAdmin = async (req, res, next) => {
+  try {
+    if (req.user.user_type_id === 1) {
       next();
     } else {
       const error = new Error('Unauthorized');
