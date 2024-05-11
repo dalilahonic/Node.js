@@ -6,7 +6,11 @@ import nodemailer from 'nodemailer';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import { isUser, verifyToken } from './middleware.js';
+import {
+  isUser,
+  verifyToken,
+  isAdmin,
+} from './middleware.js';
 
 dotenv.config();
 
@@ -69,31 +73,76 @@ router.get('/message/:id', async (req, res, next) => {
   }
 });
 
-router.post('/new-message', async (req, res, next) => {
-  try {
-    const { title, body, category } = req.body;
+router.post(
+  '/new-message',
+  verifyToken,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      const { title, body, category } = req.body;
 
-    if (!title || !body) {
-      const validationError = new Error(
-        'Title and body are required'
-      );
-      validationError.statusCode = 400;
-      throw validationError;
+      if (!title || !body) {
+        const validationError = new Error(
+          'Title and body are required'
+        );
+        validationError.statusCode = 400;
+        throw validationError;
+      }
+
+      const newMessage = new Message({
+        title,
+        body,
+        category,
+      });
+
+      await newMessage.save();
+
+      res.status(201).json({ message: newMessage });
+    } catch (error) {
+      next(error);
     }
-
-    const newMessage = new Message({
-      title,
-      body,
-      category,
-    });
-
-    await newMessage.save();
-
-    res.status(201).json({ message: newMessage });
-  } catch (error) {
-    next(error);
   }
-});
+);
+
+router.post(
+  '/message/:id/edit',
+  verifyToken,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      const { title, body, category } = req.body;
+      const id = req.params.id;
+
+      const message = await Message.findById(id);
+
+      message.title = title;
+      message.body = body;
+      message.category = category;
+
+      await message.save();
+
+      res.json({ message: 'Message updated successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/message/:id/delete',
+  verifyToken,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      const id = req.params.id;
+      await Message.findByIdAndDelete(id);
+
+      res.json({ message: 'Message deleted successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 router.post(
   '/register',
@@ -106,13 +155,43 @@ router.post(
       .withMessage(
         'Username must be at least 3 characters long'
       )
+      .custom(async (value) => {
+        const existingUser = await User.findOne({
+          username: value,
+        });
+
+        if (existingUser) {
+          const existingUsernameError = new Error(
+            'Username already taken'
+          );
+          existingUsernameError.statusCode = 400;
+          throw existingUsernameError;
+        }
+
+        return true;
+      })
       .escape(),
     body('email')
       .normalizeEmail()
       .notEmpty()
       .withMessage('Email is required')
       .isEmail()
-      .withMessage('Invalid email adress'),
+      .withMessage('Invalid email adress')
+      .custom(async (value) => {
+        const existingUser = await User.findOne({
+          email: value,
+        });
+
+        if (existingUser) {
+          const existingEmailError = new Error(
+            'Email already exists'
+          );
+          existingEmailError.statusCode = 400;
+          throw existingEmailError;
+        }
+
+        return true;
+      }),
     body('password')
       .notEmpty()
       .withMessage('Password is required')
@@ -157,28 +236,6 @@ router.post(
         throw validationError;
       }
       const { username, email, password } = req.body;
-
-      const existingEmail = await User.findOne({ email });
-
-      if (existingEmail) {
-        const existingEmailError = new Error(
-          'Email already exists'
-        );
-        existingEmailError.statusCode = 400;
-        throw existingEmailError;
-      }
-
-      const existingUsername = await User.findOne({
-        username,
-      });
-
-      if (existingUsername) {
-        const existingUsernameError = new Error(
-          'Username already taken'
-        );
-        existingUsernameError.statusCode = 400;
-        throw existingUsernameError;
-      }
 
       const hashedPassword = await bcrypt.hash(
         password,
@@ -394,5 +451,64 @@ router.post(
     }
   }
 );
+
+router.post('/reset', async (req, res, next) => {
+  try {
+    const { username } = req.body;
+
+    const token = await crypto
+      .randomBytes(32)
+      .toString('hex');
+
+    const user = await User.findOne({ username });
+
+    user.verificationToken = token;
+
+    await user.save();
+
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: 'dalilahonic1@gmail.com',
+        pass: process.env.APP_PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      from: 'dalilahonic1@gmail.com',
+      to: email,
+      subject: 'Emial Verification',
+      html: `<p>Click <a href="http://localhost:9000/reset/${verificationToken}">here</a> to verify your email.</p>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.json({ message: 'Check your email' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/reset/:token', async (req, res, next) => {
+  try {
+    const token = req.params.token;
+    const { password } = req.body;
+
+    const user = await User.findOne({
+      verificationToken: token,
+    });
+
+    const newPassword = await bcrypt.hash(password, 12);
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;
